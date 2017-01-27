@@ -4,6 +4,10 @@
 #define MAINVIEW_H
 
 #include <InterfaceKit.h>
+#include <GroupLayout.h>
+#include <SplitLayoutBuilder.h>
+
+#include "ProjectView.h"
 
 class MainView : public BView
 {
@@ -11,6 +15,7 @@ class MainView : public BView
 		MainView(BRect frame, char *name, BWindow* mw);
 		~MainView();
 	private:
+		ProjectView	*fProjectView;
 };
 
 #endif
