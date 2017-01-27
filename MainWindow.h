@@ -7,6 +7,7 @@
 #include <MenuBar.h>
 
 #include "MainView.h"
+#include "ProjectController.h"
 
 #define NEWPROJECT_MSG		'nprj'
 #define OPENPROJECT_MSG		'oprj'

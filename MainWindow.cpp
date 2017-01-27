@@ -56,6 +56,9 @@ MainWindow::MainWindow(void)
 			.Add(fOutputTabView, 1.0)
 		)
 	);
+
+	ProjectController pc;
+	pc.Load("/boot/home/devices");
 }
 
 
