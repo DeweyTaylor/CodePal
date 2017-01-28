@@ -4,9 +4,27 @@
 
 // Source File
 
+// Target Group
+TargetGroup::~TargetGroup()
+{
+	while (Sources.size() > 0)
+	{
+		SourceFile* temp = Sources.front();
+		Sources.pop_front();
+		delete temp;
+	}
+}
 
-// Source Target
-
+// Compile Target
+CompileTarget::~CompileTarget()
+{
+	while (Groups.size() > 0)
+	{
+		TargetGroup* temp = Groups.front();
+		Groups.pop_front();
+		delete temp;
+	}
+}
 
 // Project Controller
 
@@ -16,6 +34,19 @@ ProjectController::ProjectController()
 
 ProjectController::~ProjectController()
 {
+	while(fTargetList.size() > 0)
+	{
+		CompileTarget* temp = fTargetList.front();
+		fTargetList.pop_front();
+		delete temp;
+	}
+
+	while (fBuildProfileList.size() > 0)
+	{
+		BuildProfile* temp = fBuildProfileList.front();
+		fBuildProfileList.pop_front();
+		delete temp;
+	}
 }
 
 int
@@ -33,11 +64,289 @@ ProjectController::Load(string project_path)
 	}
 
 	entry.GetPath(&fPath);
-	entry.GetName(fName);
+	{
+		char temp[B_FILE_NAME_LENGTH];
+		entry.GetName(temp);
+		fName = temp;
+	}
 
-	//printf("Path: %s\n", fPath.Path());
-	//printf("Leaf: %s\n", fPath.Leaf());
-	// TODO: load project
+	string line;
+	ifstream file(fPath.Path());
+	if (!file.is_open())
+	{
+		// error opening file
+		return B_ERROR;
+	}
+
+	// load project
+	if (!getline(file, line))
+	{
+		file.close();
+		return B_ERROR;
+	}
+	// first line is version number
+	if (line != "CodePal Proj v.1")
+	{
+		// invalid file type or file version number
+		file.close();
+		return B_ERROR;
+	}
+
+	CompileTarget* CurrentTarget = NULL;
+	BuildProfile* CurrentProfile = NULL;
+	string CurrentLanguage = "C++";
+	string CurrentLanguageVersion = "C++11";
+	TargetGroup*	CurrentGroup = NULL;
+
+	while (getline(file,line))
+	{
+		if (line == "" || line.c_str()[0] == '#')
+		{
+			// blank line or comment
+			continue;
+		}
+
+		if (line.find("NAME=") == 0)
+		{
+			ProjectName = line.substr(5);
+		}
+		else if (line.find("PDIR=") == 0)
+		{
+			ProjectDirectory = line.substr(5);
+		}
+		else if (line.find("TARGET=") == 0)
+		{
+			if (CurrentTarget != NULL)
+			{
+				fTargetList.push_back(CurrentTarget);
+			}
+			CurrentTarget = new CompileTarget();
+			CurrentTarget->Name = line.substr(7);
+		}
+		else if (line.find("TDIR=") == 0)
+		{
+			if (CurrentTarget == NULL)
+			{
+				return B_ERROR;
+			}
+		}
+		else if (line.find("EXEC=") == 0)
+		{
+			if (CurrentTarget == NULL)
+			{
+				return B_ERROR;
+			}
+		}
+		else if (line.find("PROFILE=") == 0)
+		{
+			if (CurrentProfile != NULL)
+			{
+				fBuildProfileList.push_back(CurrentProfile);
+			}
+			CurrentProfile = new BuildProfile();
+			CurrentProfile->Name = line.substr(8);
+		}
+		else if (line.find("ARCH=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->fTargetArch = line.substr(5);
+		}
+		else if (line.find("OS=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->fTargetOS = line.substr(3);
+		}
+		else if (line.find("COMPILER=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->fCompiler = line.substr(9);
+		}
+		else if (line.find("PRESCRIPT=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->PreScript = line.substr(10);
+		}
+		else if (line.find("POSTSCRIPT=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->PostScript = line.substr(11);
+		}
+		else if (line.find("RUNARGS=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->RunArgs = line.substr(8);
+		}
+		else if (line.find("DEBUG=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			if (line.substr(6) == "yes" || line.substr(6) == "YES")
+			{
+				CurrentProfile->Debug = true;
+			}
+			else
+			{
+				CurrentProfile->Debug = false;
+			}
+		}
+		else if (line.find("PROFILER=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			if (line.substr(9) == "yes" || line.substr(9) == "YES")
+			{
+				CurrentProfile->Profile = true;
+			}
+			else
+			{
+				CurrentProfile->Profile = false;
+			}
+		}
+		else if (line.find("OPSIZE=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			if (line.substr(7) == "yes" || line.substr(7) == "YES")
+			{
+				CurrentProfile->Size = true;
+			}
+			else
+			{
+				CurrentProfile->Size = false;
+			}
+		}
+		else if (line.find("LOCALINCLUDE=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->LocalIncludes.push_back(line.substr(13));
+		}
+		else if (line.find("SYSINCLUDE=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->SysIncludes.push_back(line.substr(11));
+		}
+		else if (line.find("LIB=") == 0)
+		{
+			if (CurrentProfile == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentProfile->Libs.push_back(line.substr(4));
+		}
+		else if (line.find("GROUP=") == 0)
+		{
+			if (line.substr(6) == "" || CurrentTarget == NULL)
+			{
+				return B_ERROR;
+			}
+			CurrentGroup = new TargetGroup();
+			CurrentTarget->Groups.push_back(CurrentGroup);
+			CurrentGroup->Name = line.substr(6);
+		}
+		else if (line.find("EXPANDGROUP=") == 0)
+		{
+			if (CurrentGroup == NULL)
+			{
+				return B_ERROR;
+			}
+			if (line.substr(12) == "yes" || line.substr(12) == "YES")
+			{
+				CurrentGroup->Expanded = true;
+			}
+			else
+			{
+				CurrentGroup->Expanded = false;
+			}
+		}
+		else if (line.find("COMPILE=") == 0)
+		{
+			if (CurrentGroup == NULL)
+			{
+				return B_ERROR;
+			}
+			SourceFile* newfile = new SourceFile();
+			newfile->Compile = true;
+			newfile->Language = CurrentLanguage;
+			newfile->LanguageVersion = CurrentLanguageVersion;
+			newfile->Path = line.substr(8);
+		}
+		else if (line.find("NOCOMPILE=") == 0)
+		{
+			if (CurrentGroup == NULL)
+			{
+				return B_ERROR;
+			}
+			SourceFile* newfile = new SourceFile();
+			newfile->Compile = false;
+			newfile->Language = CurrentLanguage;
+			newfile->LanguageVersion = CurrentLanguageVersion;
+			newfile->Path = line.substr(8);
+		}
+		else if (line.find("LANGUAGE=") == 0)
+		{
+			if (line.substr(9) == "")
+			{
+				return B_ERROR;
+			}
+			CurrentLanguage = line.substr(9);
+		}
+		else if (line.find("LANGVER=") == 0)
+		{
+			if (line.substr(8) == "")
+			{
+				return B_ERROR;
+			}
+			CurrentLanguageVersion = line.substr(8);
+		}
+		else
+		{
+			return B_ERROR;
+		}
+	}
+
+	if (CurrentTarget == NULL)
+	{
+		return B_ERROR;
+	}
+	if (CurrentTarget != NULL)
+	{
+		fTargetList.push_back(CurrentTarget);
+	}
+	if (CurrentProfile != NULL)
+	{
+		fBuildProfileList.push_back(CurrentProfile);
+	}
+	file.close();
 	return B_OK;
 }
 

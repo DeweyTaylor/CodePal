@@ -58,7 +58,7 @@ MainWindow::MainWindow(void)
 	);
 
 	ProjectController pc;
-	pc.Load("/boot/home/devices");
+	pc.Load("/boot/home/Desktop/mockup of CodePal project file");
 }
 
 
