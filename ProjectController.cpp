@@ -9,8 +9,8 @@ TargetGroup::~TargetGroup()
 {
 	while (Sources.size() > 0)
 	{
-		SourceFile* temp = Sources.front();
-		Sources.pop_front();
+		SourceFile* temp = Sources.back();
+		Sources.pop_back();
 		delete temp;
 	}
 }
@@ -20,8 +20,8 @@ CompileTarget::~CompileTarget()
 {
 	while (Groups.size() > 0)
 	{
-		TargetGroup* temp = Groups.front();
-		Groups.pop_front();
+		TargetGroup* temp = Groups.back();
+		Groups.pop_back();
 		delete temp;
 	}
 }
@@ -299,6 +299,7 @@ ProjectController::Load(string project_path)
 			newfile->Language = CurrentLanguage;
 			newfile->LanguageVersion = CurrentLanguageVersion;
 			newfile->Path = line.substr(8);
+			CurrentGroup->Sources.push_back(newfile);
 		}
 		else if (line.find("NOCOMPILE=") == 0)
 		{
@@ -310,7 +311,8 @@ ProjectController::Load(string project_path)
 			newfile->Compile = false;
 			newfile->Language = CurrentLanguage;
 			newfile->LanguageVersion = CurrentLanguageVersion;
-			newfile->Path = line.substr(8);
+			newfile->Path = line.substr(10);
+			CurrentGroup->Sources.push_back(newfile);
 		}
 		else if (line.find("LANGUAGE=") == 0)
 		{
@@ -430,20 +432,43 @@ vector<string>
 ProjectController::GetBuildProfileList()
 {
 	vector<string> profilenames;
-	for (int a = 0; a < fBuildProfileList.size(); a++)
+	for (uint a = 0; a < fBuildProfileList.size(); a++)
 	{
 		profilenames.push_back(fBuildProfileList[a]->Name);
 	}
 	return profilenames;
 }
 
-vector<string>
+vector<CompileTarget*>
+ProjectController::GetTargetTree()
+{
+	return fTargetList;
+}
+
+/*vector<string>
 ProjectController::GetTargetList()
 {
 	vector<string> targets;
-	for (int a = 0; a < fTargetList.size(); a++)
+	for (uint a = 0; a < fTargetList.size(); a++)
 	{
 		targets.push_back(fTargetList[a]->Name);
 	}
 	return targets;
 }
+
+vector<string>
+ProjectController::GetGroupsForTarget(string target)
+{
+	vector<string> groups;
+	for (uint a = 0; a < fTargetList.size(); a++)
+	{
+		if (fTargetList[a]->Name == target)
+		{
+			for (uint b = 0; b < fTargetList[a]->Groups.size(); b++)
+			{
+				groups.push_back(fTargetList[a]->Groups[b]->Name);
+			}
+		}
+	}
+	return groups;
+}*/

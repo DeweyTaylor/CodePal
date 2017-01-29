@@ -13,7 +13,7 @@ MainWindow::MainWindow(void)
 {
 	fProject = NULL;
 	fBuildProfileMenu = new BPopUpMenu("build profile menu");
-	fBuildProfileSelector = new BMenuField("build profile selector", "Build Profile", fBuildProfileMenu);
+	fBuildProfileSelector = new BMenuField("build profile selector", "Build Profile:", fBuildProfileMenu);
 
 	fMenuBar = new BMenuBar("menubar");
 
@@ -45,8 +45,9 @@ MainWindow::MainWindow(void)
 		.Add(BGroupLayoutBuilder(B_HORIZONTAL, 5.0)
 			//.Add(fToolBar, 1.0)
 			.AddStrut(5)
-			.Add(new BStringView("build profile menu label", "Build Profile:"))
+			//.Add(new BStringView("build profile menu label", "Build Profile:"))
 			.Add(fBuildProfileSelector, 1.0)
+			.AddGlue().AddGlue().AddGlue()
 		)
 		.Add(BSplitLayoutBuilder(B_VERTICAL, 0.0)
 			.Add(BSplitLayoutBuilder(B_HORIZONTAL, 0.0)
@@ -141,17 +142,33 @@ MainWindow::_PopulateProjectTab()
 	newtab->SetLabel(fProject->ProjectName.c_str());
 
 	vector<string> buildproflist = fProject->GetBuildProfileList();
-	for (int a = 0; a < buildproflist.size(); a++)
+	for (uint a = 0; a < buildproflist.size(); a++)
 	{
 		fBuildProfileMenu->AddItem(new BMenuItem(buildproflist[a].c_str(), new BMessage(UPDATEBUILDPROFILE_MSG)));
 	}
 	fBuildProfileMenu->ItemAt(0)->SetMarked(true);
-	//fProjectItemsView = new BOutlineListView(BRect(0,0,1,1), "project items view");
-	//newtab->SetView(fProjectItemsView);
-	vector<string> targetlist = fProject->GetTargetList();
-	for (int a = 0; a < targetlist.size(); a++)
+
+	//vector<string> targetlist = fProject->GetTargetList();
+	//for (uint a = 0; a < targetlist.size(); a++)
+	//{
+	//	BStringItem* newitem = new BStringItem(targetlist[a].c_str());
+	//	newoutline->AddItem(newitem);
+	//}
+	vector<CompileTarget*> targettree = fProject->GetTargetTree();
+	for (uint a = 0; a < targettree.size(); a++)
 	{
-		BStringItem* newitem = new BStringItem(targetlist[a].c_str());
-		newoutline->AddItem(newitem);
+		BStringItem* target = new BStringItem(targettree[a]->Name.c_str());
+		newoutline->AddItem(target);
+		for (uint b = 0; b < targettree[a]->Groups.size(); b++)
+		{
+			BStringItem* group = new BStringItem(targettree[a]->Groups[b]->Name.c_str());
+			group->SetExpanded(targettree[a]->Groups[b]->Expanded);
+			newoutline->AddUnder(group, target);
+			for (uint c = 0; c < targettree[a]->Groups[b]->Sources.size(); c++)
+			{
+				BStringItem* file = new BStringItem(targettree[a]->Groups[b]->Sources[c]->Path.c_str());
+				newoutline->AddUnder(file, group);
+			}
+		}
 	}
 }

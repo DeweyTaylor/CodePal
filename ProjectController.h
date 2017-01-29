@@ -6,7 +6,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <list>
 #include <vector>
 #include <StorageKit.h>
 #include <String.h>
@@ -34,9 +33,9 @@ struct BuildProfile
 	bool			Debug;			// compile with debug symbols
 	bool			Profile;		// compile with profiling data
 	bool			Size;			// compile for size
-	list<string>	LocalIncludes;
-	list<string>	SysIncludes;
-	list<string>	Libs;
+	vector<string>	LocalIncludes;
+	vector<string>	SysIncludes;
+	vector<string>	Libs;
 };
 
 struct TargetGroup
@@ -44,16 +43,16 @@ struct TargetGroup
 						~TargetGroup();
 	string				Name;
 	bool				Expanded;
-	list<SourceFile*>	Sources;
+	vector<SourceFile*>	Sources;
 };
 
 struct CompileTarget
 {
-						~CompileTarget();
-	string				TargetDir;
-	string				Executable;
-	string				Name;
-	list<TargetGroup*>	Groups;
+							~CompileTarget();
+	string					TargetDir;
+	string					Executable;
+	string					Name;
+	vector<TargetGroup*>	Groups;
 };
 
 class ProjectController
@@ -74,7 +73,9 @@ class ProjectController
 		int						Export(string, string); // project type, project path
 		string					GetName() { return fName; }
 		vector<string>			GetBuildProfileList();
-		vector<string>			GetTargetList();
+		vector<CompileTarget*>	GetTargetTree();
+		//vector<string>			GetTargetList();
+		//vector<string>			GetGroupsForTarget(string);
 
 		string					ProjectName = "";
 		string					ProjectDirectory;
