@@ -36,15 +36,15 @@ ProjectController::~ProjectController()
 {
 	while(fTargetList.size() > 0)
 	{
-		CompileTarget* temp = fTargetList.front();
-		fTargetList.pop_front();
+		CompileTarget* temp = fTargetList.back();
+		fTargetList.pop_back();
 		delete temp;
 	}
 
 	while (fBuildProfileList.size() > 0)
 	{
-		BuildProfile* temp = fBuildProfileList.front();
-		fBuildProfileList.pop_front();
+		BuildProfile* temp = fBuildProfileList.back();
+		fBuildProfileList.pop_back();
 		delete temp;
 	}
 }
@@ -347,12 +347,46 @@ ProjectController::Load(string project_path)
 		fBuildProfileList.push_back(CurrentProfile);
 	}
 	file.close();
+	fChanged = false;
 	return B_OK;
+}
+
+int ProjectController::Load(BMessage *msg)
+{
+	if (!msg)
+	{
+		return B_ERROR;
+	}
+
+	entry_ref dirRef;
+	if(msg->FindRef("refs", &dirRef) != B_OK)
+	{
+		return B_BAD_VALUE;
+	}
+
+	BEntry entry(&dirRef, true);
+
+	BPath path;
+	entry.GetPath(&path);
+	return Load(path.Path());
 }
 
 int
 ProjectController::Save()
 {
+	// TODO: save
+	fChanged = false;
+	return B_OK;
+}
+
+int
+ProjectController::Close()
+{
+	if (fChanged)
+	{
+		// TODO: save
+	}
+	// TODO: destruct
 	return B_OK;
 }
 
@@ -390,4 +424,26 @@ int
 ProjectController::Export(string project_type, string project_path)
 {
 	return B_OK;
+}
+
+vector<string>
+ProjectController::GetBuildProfileList()
+{
+	vector<string> profilenames;
+	for (int a = 0; a < fBuildProfileList.size(); a++)
+	{
+		profilenames.push_back(fBuildProfileList[a]->Name);
+	}
+	return profilenames;
+}
+
+vector<string>
+ProjectController::GetTargetList()
+{
+	vector<string> targets;
+	for (int a = 0; a < fTargetList.size(); a++)
+	{
+		targets.push_back(fTargetList[a]->Name);
+	}
+	return targets;
 }

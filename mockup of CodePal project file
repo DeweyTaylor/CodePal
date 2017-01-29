@@ -1,0 +1,38 @@
+CodePal Proj v.1
+NAME=ProjectName
+PDIR=/path/to/project/file
+
+TARGET=TargetName
+TDIR=/path/to/target/exec
+EXEC=ExecutableName
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+TARGET=AnotherTarget
+
+PROFILE=Debug
+ARCH=(Default)
+OS=(Default)
+COMPILER=(Default)
+PRESCRIPT=/path/to/precompile/script
+POSTSCRIPT=/path/to/postcompile/script
+RUNARGS=abc
+DEBUG=yes
+PROFILER=no
+OPSIZE=no
+LOCALINCLUDE=/path/to/headers
+SYSINCLUDE=/path/to/sys/headers
+LIB=/path/to/library
+
+GROUP=GroupName
+EXPANDGROUP=yes
+COMPILE=file 1|file 2|...
+NOCOMPILE=file 1|file 2|...

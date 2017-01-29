@@ -7,8 +7,10 @@
 #include <fstream>
 #include <string>
 #include <list>
+#include <vector>
 #include <StorageKit.h>
 #include <String.h>
+#include <InterfaceKit.h>
 
 using namespace std;
 
@@ -61,22 +63,28 @@ class ProjectController
 								~ProjectController();
 
 		int						Load(string);
+		int						Load(BMessage*);
 		int						Save();
+		int						Close();
 		int						SaveAs(string);
 		int 					Build();
 		int 					AddFile(string);
 		int 					RemoveFile(string);
 		int						Import(string, string);	// project type, project path
 		int						Export(string, string); // project type, project path
+		string					GetName() { return fName; }
+		vector<string>			GetBuildProfileList();
+		vector<string>			GetTargetList();
 
-		string					ProjectName;
+		string					ProjectName = "";
 		string					ProjectDirectory;
 	private:
 		// settings
-		list<CompileTarget*>	fTargetList;
-		list<BuildProfile*>		fBuildProfileList;
+		vector<CompileTarget*>	fTargetList;
+		vector<BuildProfile*>	fBuildProfileList;
 		BPath					fPath;
-		string					fName;
+		string					fName = "";
+		bool					fChanged;
 };
 
 #endif
