@@ -54,7 +54,7 @@ RSRCS =  Resources.rsrc
 #	- 	if your library does not follow the standard library naming scheme,
 #		you need to specify the path to the library and it's name.
 #		(e.g. for mylib.a, specify "mylib.a" or "path/mylib.a")
-LIBS =  /boot/system/lib/libroot.so /boot/system/lib/libbe.so /boot/system/lib/libsupc++.so /boot/system/develop/lib/libsqlite3.so /boot/system/lib/libstdc++.so /boot/system/lib/libtracker.so
+LIBS =  /boot/system/lib/libroot.so /boot/system/lib/libbe.so /boot/system/lib/libsupc++.so /boot/system/develop/lib/libsqlite3.so $(STDCPPLIBS) /boot/system/lib/libtracker.so
 
 #	Specify additional paths to directories following the standard libXXX.so
 #	or libXXX.a naming scheme. You can specify full paths or paths relative
