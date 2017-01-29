@@ -13,11 +13,9 @@ MainWindow::MainWindow(void)
 {
 	fProject = NULL;
 	fBuildProfileMenu = new BPopUpMenu("build profile menu");
-	fBuildProfileSelector = new BMenuField(BRect(0,0,1,1), "build profile selector", "Build Profile", fBuildProfileMenu);
+	fBuildProfileSelector = new BMenuField("build profile selector", "Build Profile", fBuildProfileMenu);
 
-	BRect r(Bounds());
-	r.bottom = 20;
-	fMenuBar = new BMenuBar(r,"menubar");
+	fMenuBar = new BMenuBar("menubar");
 
 	fProjectMenu = new BMenu("Project");
 	fSettingsMenu = new BMenu("Settings");
@@ -30,11 +28,11 @@ MainWindow::MainWindow(void)
 	fMenuBar->AddItem(fProjectMenu);
 	fMenuBar->AddItem(fSettingsMenu);
 
-	fProjectTabView = new BTabView(BRect(0,0,1,1), "project view");
-	fDebugTabView = new BTabView(BRect(0,0,1,1), "debug view");
-	fLeftTabView = new BTabView(BRect(0,0,1,1), "left view");
-	fRightTabView = new BTabView(BRect(0,0,1,1), "right view");
-	fOutputTabView = new BTabView(BRect(0,0,1,1), "output view");
+	fProjectTabView = new BTabView("project view");
+	fDebugTabView = new BTabView("debug view");
+	fLeftTabView = new BTabView("left view");
+	fRightTabView = new BTabView("right view");
+	fOutputTabView = new BTabView("output view");
 	fProjectTabView->SetExplicitMinSize(BSize(1.0, 1.0));
 	fDebugTabView->SetExplicitMinSize(BSize(1.0, 1.0));
 	fLeftTabView->SetExplicitMinSize(BSize(1.0, 1.0));
@@ -47,7 +45,7 @@ MainWindow::MainWindow(void)
 		.Add(BGroupLayoutBuilder(B_HORIZONTAL, 5.0)
 			//.Add(fToolBar, 1.0)
 			.AddStrut(5)
-			.Add(new BStringView(BRect(0,0,1,1), "build profile menu label", "Build Profile:"))
+			.Add(new BStringView("build profile menu label", "Build Profile:"))
 			.Add(fBuildProfileSelector, 1.0)
 		)
 		.Add(BSplitLayoutBuilder(B_VERTICAL, 0.0)
@@ -135,21 +133,12 @@ MainWindow::_PopulateProjectTab()
 	SetTitle(wintitle.c_str());
 
 	BTab *newtab = new BTab();
-	newtab->SetLabel(fProject->ProjectName.c_str());
-	BOutlineListView *newoutline = new BOutlineListView(BRect(0,0,1,1),"project view", B_MULTIPLE_SELECTION_LIST, B_FOLLOW_ALL, B_WILL_DRAW);
-	BScrollView *bsv = new BScrollView("project scroll view", newoutline, B_FOLLOW_ALL, 0, true, true);
-	newoutline->SetLayout(new BGroupLayout(B_VERTICAL));
-	//bsv->SetLayout(new BGroupLayout(B_VERTICAL));
-	fProjectTabView->AddTab(bsv, newtab);
 
-	//BTab *newtab = new  BTab(); //BTab(newoutline);
+	BOutlineListView *newoutline = new BOutlineListView("project view", B_MULTIPLE_SELECTION_LIST, B_WILL_DRAW);
+	BScrollView *bsv = new BScrollView("project scroll view", newoutline, 0, true, true);
+
+	fProjectTabView->AddTab(bsv, newtab);
 	newtab->SetLabel(fProject->ProjectName.c_str());
-	//BScrollView* bsv = new BScrollView("project scroll view", newoutline, B_FOLLOW_ALL, 0, true, true);
-	//bsv->SetLayout(new BGroupLayout(B_VERTICAL));
-//newoutline->SetLayout(new BGroupLayout(B_VERTICAL));
-	//fProjectTabView->AddTab(newoutline, newtab);
-	//fProjectTabView->AddTab(bsv, newtab);
-	//fProjectTabView->SetLayout(new BGroupLayout(B_VERTICAL));
 
 	vector<string> buildproflist = fProject->GetBuildProfileList();
 	for (int a = 0; a < buildproflist.size(); a++)
@@ -159,12 +148,10 @@ MainWindow::_PopulateProjectTab()
 	fBuildProfileMenu->ItemAt(0)->SetMarked(true);
 	//fProjectItemsView = new BOutlineListView(BRect(0,0,1,1), "project items view");
 	//newtab->SetView(fProjectItemsView);
-	//fProjectItemsView->SetResizingMode(B_FOLLOW_ALL);
 	vector<string> targetlist = fProject->GetTargetList();
 	for (int a = 0; a < targetlist.size(); a++)
 	{
 		BStringItem* newitem = new BStringItem(targetlist[a].c_str());
 		newoutline->AddItem(newitem);
 	}
-	//newoutline->ResizeToPreferred();
 }
