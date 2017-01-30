@@ -18,12 +18,15 @@ MainWindow::MainWindow(void)
 	fMenuBar = new BMenuBar("menubar");
 
 	fProjectMenu = new BMenu("Project");
-	fSettingsMenu = new BMenu("Settings");
 
 	fProjectMenu->AddItem(new BMenuItem("New Project...", new BMessage(NEWPROJECT_MSG)));
 	fProjectMenu->AddItem(new BMenuItem("Open Project...", new BMessage(OPENPROJECT_MSG)));
 	fProjectMenu->AddSeparatorItem();
 	fProjectMenu->AddItem(new BMenuItem("Exit", new BMessage(EXIT_MSG)));
+
+	fSettingsMenu = new BMenu("Settings");
+
+	fSettingsMenu->AddItem(new BMenuItem("Build Profiles...", new BMessage(EDITBUILDPROFILES_MSG)));
 
 	fMenuBar->AddItem(fProjectMenu);
 	fMenuBar->AddItem(fSettingsMenu);
@@ -43,9 +46,7 @@ MainWindow::MainWindow(void)
 	AddChild(BGroupLayoutBuilder(B_VERTICAL, 0.0)
 		.Add(fMenuBar, 1.0)
 		.Add(BGroupLayoutBuilder(B_HORIZONTAL, 5.0)
-			//.Add(fToolBar, 1.0)
 			.AddStrut(5)
-			//.Add(new BStringView("build profile menu label", "Build Profile:"))
 			.Add(fBuildProfileSelector, 1.0)
 			.AddGlue().AddGlue().AddGlue()
 		)
@@ -83,6 +84,17 @@ MainWindow::MessageReceived(BMessage *msg)
 			BMessenger target(this);
 			BFilePanel *OpenPanel = new BFilePanel(B_OPEN_PANEL, &target, NULL, B_FILE_NODE, false, NULL, NULL, true, true);
 			OpenPanel->Show();
+			break;
+		}
+		case EDITBUILDPROFILES_MSG:
+		{
+			if (fProject == NULL)
+			{
+				return;
+			}
+			vector<BuildProfile*> profiles = fProject->GetBuildProfiles();
+			EditBuildProfilesWindow *editwindow = new EditBuildProfilesWindow(profiles);
+			editwindow->Show();
 			break;
 		}
 		case EXIT_MSG:
@@ -135,12 +147,15 @@ MainWindow::_PopulateProjectTab()
 
 	BTab *newtab = new BTab();
 
-	BOutlineListView *newoutline = new BOutlineListView("project view", B_MULTIPLE_SELECTION_LIST, B_WILL_DRAW);
-	BScrollView *bsv = new BScrollView("project scroll view", newoutline, 0, true, true);
+	BColumnListView *newoutline = new BColumnListView("project view", B_ALLOW_COLUMN_NONE);
+	BStringColumn *newcolumn = new BStringColumn("projectdata", 200, 50, 2000, B_TRUNCATE_MIDDLE);
+	//newcolumn->SetShowHeading(false);
+	newoutline->AddColumn(newcolumn, 0);
 
-	fProjectTabView->AddTab(bsv, newtab);
+	fProjectTabView->AddTab(newoutline, newtab);
 	newtab->SetLabel(fProject->ProjectName.c_str());
 
+	// populate the build project menu
 	vector<string> buildproflist = fProject->GetBuildProfileList();
 	for (uint a = 0; a < buildproflist.size(); a++)
 	{
@@ -148,26 +163,20 @@ MainWindow::_PopulateProjectTab()
 	}
 	fBuildProfileMenu->ItemAt(0)->SetMarked(true);
 
-	//vector<string> targetlist = fProject->GetTargetList();
-	//for (uint a = 0; a < targetlist.size(); a++)
-	//{
-	//	BStringItem* newitem = new BStringItem(targetlist[a].c_str());
-	//	newoutline->AddItem(newitem);
-	//}
+	// populate the project tab
 	vector<CompileTarget*> targettree = fProject->GetTargetTree();
 	for (uint a = 0; a < targettree.size(); a++)
 	{
-		BStringItem* target = new BStringItem(targettree[a]->Name.c_str());
-		newoutline->AddItem(target);
+		OneStringRow* target = new OneStringRow(targettree[a]->Name.c_str());
+		newoutline->AddRow(target);
 		for (uint b = 0; b < targettree[a]->Groups.size(); b++)
 		{
-			BStringItem* group = new BStringItem(targettree[a]->Groups[b]->Name.c_str());
-			group->SetExpanded(targettree[a]->Groups[b]->Expanded);
-			newoutline->AddUnder(group, target);
+			OneStringRow* group = new OneStringRow(targettree[a]->Groups[b]->Name.c_str());
+			newoutline->AddRow(group, target);
 			for (uint c = 0; c < targettree[a]->Groups[b]->Sources.size(); c++)
 			{
-				BStringItem* file = new BStringItem(targettree[a]->Groups[b]->Sources[c]->Path.c_str());
-				newoutline->AddUnder(file, group);
+				OneStringRow* file = new OneStringRow(targettree[a]->Groups[b]->Sources[c]->Path.c_str());
+				newoutline->AddRow(file, group);
 			}
 		}
 	}

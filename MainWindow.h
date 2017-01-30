@@ -9,13 +9,18 @@
 #include <GroupLayout.h>
 #include <SplitLayoutBuilder.h>
 #include <vector>
+#include <ColumnListView.h>
+#include <ColumnTypes.h>
 
 #include "ProjectController.h"
+#include "CLVHelpers.h"
+#include "EditBuildProfilesWindow.h"
 
 #define NEWPROJECT_MSG			'nprj'
 #define OPENPROJECT_MSG			'oprj'
 #define EXIT_MSG				'exit'
 #define UPDATEBUILDPROFILE_MSG	'ubpr'
+#define EDITBUILDPROFILES_MSG	'ebpr'
 
 
 class MainWindow : public BWindow
@@ -38,7 +43,8 @@ class MainWindow : public BWindow
 		BView				*fToolBar;
 		BMenuField			*fBuildProfileSelector;
 		BPopUpMenu			*fBuildProfileMenu;
-		BOutlineListView	*fProjectItemsView;
+		//BOutlineListView	*fProjectItemsView;
+		BColumnListView		*fProjectItemsView;
 
 		ProjectController	*fProject;
 

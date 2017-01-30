@@ -116,11 +116,9 @@ ProjectController::Load(string project_path)
 		}
 		else if (line.find("TARGET=") == 0)
 		{
-			if (CurrentTarget != NULL)
-			{
-				fTargetList.push_back(CurrentTarget);
-			}
 			CurrentTarget = new CompileTarget();
+			fTargetList.push_back(CurrentTarget);
+			CurrentGroup = NULL;
 			CurrentTarget->Name = line.substr(7);
 		}
 		else if (line.find("TDIR=") == 0)
@@ -139,12 +137,13 @@ ProjectController::Load(string project_path)
 		}
 		else if (line.find("PROFILE=") == 0)
 		{
-			if (CurrentProfile != NULL)
-			{
-				fBuildProfileList.push_back(CurrentProfile);
-			}
 			CurrentProfile = new BuildProfile();
+			fBuildProfileList.push_back(CurrentProfile);
 			CurrentProfile->Name = line.substr(8);
+		}
+		else if (line.find("DEFAULTPROFILE=") == 0)
+		{
+			fSelectedProfile = line.substr(15);
 		}
 		else if (line.find("ARCH=") == 0)
 		{
@@ -340,15 +339,21 @@ ProjectController::Load(string project_path)
 	{
 		return B_ERROR;
 	}
-	if (CurrentTarget != NULL)
-	{
-		fTargetList.push_back(CurrentTarget);
-	}
-	if (CurrentProfile != NULL)
-	{
-		fBuildProfileList.push_back(CurrentProfile);
-	}
 	file.close();
+	// TEMPORARY FOR DEBUGGING
+	for (uint a = 0; a < fTargetList.size(); a++)
+	{
+		cout<<"TARGET -> '" << fTargetList[a]->Name << "'" << endl;
+		for (uint b = 0; b < fTargetList[a]->Groups.size(); b++)
+		{
+			cout << "  GROUP -> '" << fTargetList[a]->Groups[b]->Name << "'" << endl;
+			for (uint c = 0; c < fTargetList[a]->Groups[b]->Sources.size(); c++)
+			{
+				cout <<"    FILE -> '" << fTargetList[a]->Groups[b]->Sources[c]->Path << "'" << endl;
+			}
+		}
+	}
+	// END TEMPORARY
 	fChanged = false;
 	return B_OK;
 }
@@ -377,6 +382,68 @@ int
 ProjectController::Save()
 {
 	// TODO: save
+	ofstream file;
+	file.open (ProjectDirectory + ProjectName, ios::out);
+	file << "CodePal Proj v.1" << endl;
+	file << "NAME=" << ProjectName << endl;
+	file << "PDIR=" << ProjectDirectory << endl;
+	for (uint a = 0; a < fBuildProfileList.size(); a++)
+	{
+		BuildProfile *bp = fBuildProfileList[a];
+		file << "PROFILE=" << bp->Name << endl;
+		file << "ARCH=" << bp->fTargetArch << endl;
+		file << "OS=" << bp->fTargetOS << endl;
+		file << "COMPILER=" << bp->fCompiler << endl;
+		file << "PRESCRIPT=" << bp->PreScript << endl;
+		file << "POSTSCRIPT=" << bp->PostScript << endl;
+		file << "RUNARGS=" << bp->RunArgs << endl;
+		file << "DEBUG=" << (bp->Debug ? "yes" : "no") << endl;
+		file << "PROFILER=" << (bp->Profile ? "yes" : "no") << endl;
+		file << "OPSIZE=" << (bp->Size ? "yes" : "no") << endl;
+		for (uint b = 0; b < bp->LocalIncludes.size(); b++)
+		{
+			file << "LOCALINCLUDE=" << bp->LocalIncludes[b] << endl;
+		}
+		for (uint b = 0; b < bp->SysIncludes.size(); b++)
+		{
+			file << "SYSINCLUDE=" << bp->SysIncludes[b] << endl;
+		}
+		for (uint b = 0; b < bp->Libs.size(); b++)
+		{
+			file << "LIB=" << bp->Libs[b] << endl;
+		}
+	}
+	for (uint a = 0; a < fTargetList.size(); a++)
+	{
+		CompileTarget *ct = fTargetList[a];
+		file << "TARGET=" << ct->Name << endl;
+		file << "TDIR=" << ct->TargetDir << endl;
+		file << "EXEC=" << ct->Executable << endl;
+		for (uint b = 0; b < ct->Groups.size(); b++)
+		{
+			TargetGroup *tg = ct->Groups[b];
+			file << "GROUP=" << tg->Name;
+			file << "EXPANDGROUP=" << (tg->Expanded ? "yes" : "no") << endl;
+			string lang = "";
+			string langver = "";
+			for (uint c = 0; c < tg->Sources.size(); c++)
+			{
+				SourceFile *s = tg->Sources[c];
+				if (s->Language != lang)
+				{
+					lang = s->Language;
+					file << "LANGUAGE=" << lang << endl;
+				}
+				if (s->LanguageVersion != langver)
+				{
+					langver = s->LanguageVersion;
+					file << "LANGVER=" << langver << endl;
+				}
+				file << (s->Compile ? "COMPILE=" : "NOCOMPILE=") << s->Path << endl;
+			}
+		}
+	}
+	file.close();
 	fChanged = false;
 	return B_OK;
 }
@@ -386,7 +453,8 @@ ProjectController::Close()
 {
 	if (fChanged)
 	{
-		// TODO: save
+		// could ask first
+		Save();
 	}
 	// TODO: destruct
 	return B_OK;
@@ -439,36 +507,27 @@ ProjectController::GetBuildProfileList()
 	return profilenames;
 }
 
+vector<BuildProfile*>
+ProjectController::GetBuildProfiles()
+{
+	return fBuildProfileList;
+}
+
 vector<CompileTarget*>
 ProjectController::GetTargetTree()
 {
 	return fTargetList;
 }
 
-/*vector<string>
-ProjectController::GetTargetList()
+string
+ProjectController::SelectedProfile()
 {
-	vector<string> targets;
-	for (uint a = 0; a < fTargetList.size(); a++)
-	{
-		targets.push_back(fTargetList[a]->Name);
-	}
-	return targets;
+	return fSelectedProfile;
 }
 
-vector<string>
-ProjectController::GetGroupsForTarget(string target)
+void
+ProjectController::SetSelectedProfile(string prof)
 {
-	vector<string> groups;
-	for (uint a = 0; a < fTargetList.size(); a++)
-	{
-		if (fTargetList[a]->Name == target)
-		{
-			for (uint b = 0; b < fTargetList[a]->Groups.size(); b++)
-			{
-				groups.push_back(fTargetList[a]->Groups[b]->Name);
-			}
-		}
-	}
-	return groups;
-}*/
+	// TODO: validate that the profile is valid
+	fSelectedProfile = prof;
+}

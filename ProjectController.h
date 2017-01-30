@@ -53,6 +53,7 @@ struct CompileTarget
 	string					Executable;
 	string					Name;
 	vector<TargetGroup*>	Groups;
+	bool					fFileChanged; // file was edited, target is invalid
 };
 
 class ProjectController
@@ -73,9 +74,10 @@ class ProjectController
 		int						Export(string, string); // project type, project path
 		string					GetName() { return fName; }
 		vector<string>			GetBuildProfileList();
+		vector<BuildProfile*>	GetBuildProfiles();
 		vector<CompileTarget*>	GetTargetTree();
-		//vector<string>			GetTargetList();
-		//vector<string>			GetGroupsForTarget(string);
+		string					SelectedProfile();
+		void					SetSelectedProfile(string);
 
 		string					ProjectName = "";
 		string					ProjectDirectory;
@@ -85,7 +87,8 @@ class ProjectController
 		vector<BuildProfile*>	fBuildProfileList;
 		BPath					fPath;
 		string					fName = "";
-		bool					fChanged;
+		bool					fChanged; // projects needs saving
+		string					fSelectedProfile;
 };
 
 #endif
