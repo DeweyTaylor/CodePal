@@ -9,10 +9,12 @@
 class OneStringRow : public BRow
 {
 	public:
-					OneStringRow(const char*);
+					OneStringRow(const char*, const char* = 0);
 					~OneStringRow();
+		const char*	GetTypeID() { return fTypeID; }
 	private:
 		const char*	val;
+		const char* fTypeID;
 };
 
 #endif

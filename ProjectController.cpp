@@ -382,11 +382,7 @@ int ProjectController::Load(BMessage *msg)
 int
 ProjectController::Save()
 {
-	// TODO: save
 	ofstream file;
-	//cout << "path: " << fPath.Path() + fName << endl;
-	//return 0;
-	//file.open (ProjectDirectory + ProjectName);
 	file.open(fPath.Path());
 	file << "CodePal Proj v.1" << endl;
 	file << "NAME=" << ProjectName << endl;
@@ -426,7 +422,7 @@ ProjectController::Save()
 		for (uint b = 0; b < ct->Groups.size(); b++)
 		{
 			TargetGroup *tg = ct->Groups[b];
-			file << "GROUP=" << tg->Name;
+			file << "GROUP=" << tg->Name << endl;
 			file << "EXPANDGROUP=" << (tg->Expanded ? "yes" : "no") << endl;
 			string lang = "";
 			string langver = "";
@@ -468,36 +464,42 @@ ProjectController::Close()
 int
 ProjectController::SaveAs(string new_project_path)
 {
+	// TODO: implement
 	return B_OK;
 }
 
 int
 ProjectController::Build()
 {
+	// TODO: implement
 	return B_OK;
 }
 
 int
 ProjectController::AddFile(string file_path)
 {
+	// TODO: implement
 	return B_OK;
 }
 
 int
 ProjectController::RemoveFile(string file_path)
 {
+	// TODO: implement
 	return B_OK;
 }
 
 int
 ProjectController::Import(string project_type, string project_path)
 {
+	// TODO: implement
 	return B_OK;
 }
 
 int
 ProjectController::Export(string project_type, string project_path)
 {
+	// TODO: implement
 	return B_OK;
 }
 

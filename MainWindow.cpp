@@ -14,6 +14,7 @@ MainWindow::MainWindow(void)
 	fProject = NULL;
 	fBuildProfileMenu = new BPopUpMenu("build profile menu");
 	fBuildProfileSelector = new BMenuField("build profile selector", "Build Profile:", fBuildProfileMenu);
+	fProjectContextMenu = new BPopUpMenu("project context menu");
 
 	fMenuBar = new BMenuBar("menubar");
 
@@ -127,13 +128,106 @@ MainWindow::MessageReceived(BMessage *msg)
 		}
 		case NEWPROFILEDATA_MSG:
 		{
-			/*vector<BuildProfile*> bp;
-			void* ptr;
-			msg->FindPointer("data", &ptr);
-			bp = *((vector<BuildProfile*>)ptr);
-			fProject->SetBuildProfiles(bp);*/
 			fProject->SetBuildProfiles(_fHiddenNewBuildProfiles);
 			_PopulateBuildProfileMenu();
+			break;
+		}
+		case PROJECTLISTSELECTION_MSG:
+		{
+			BPoint where;
+			uint32 buttons;
+			fProjectItemsView->GetMouse(&where, &buttons);
+			//where.x += 2; // to prevent occasional select
+			if (buttons & B_SECONDARY_MOUSE_BUTTON)
+			{
+				//		true, false, true);
+				// TODO: set up the menu here
+				OneStringRow* r = (OneStringRow*)fProjectItemsView->CurrentSelection();
+				// "target" "group" "source"
+				while (fProjectContextMenu->CountItems() > 0)
+				{
+					fProjectContextMenu->RemoveItem(0);
+				}
+				string type = r->GetTypeID();
+				if (type == "target")
+				{
+					fProjectContextMenu->AddItem(fNewTargetMenuItem);
+					fProjectContextMenu->AddItem(fRenameTargetMenuItem);
+					fProjectContextMenu->AddItem(fRemoveTargetMenuItem);
+					fProjectContextMenu->AddItem(fAddGroupMenuItem);
+					fProjectContextMenu->AddItem(fPropertiesMenuItem);
+				}
+				else if (type == "group")
+				{
+					fProjectContextMenu->AddItem(fRenameGroupMenuItem);
+					fProjectContextMenu->AddItem(fRemoveGroupMenuItem);
+					fProjectContextMenu->AddItem(fNewFileMenuItem);
+					fProjectContextMenu->AddItem(fAddFileMenuItem);
+					fProjectContextMenu->AddItem(fPropertiesMenuItem);
+				}
+				else if (type == "source")
+				{
+					fProjectContextMenu->AddItem(fRenameFileMenuItem);
+					fProjectContextMenu->AddItem(fRemoveFileMenuItem);
+					fProjectContextMenu->AddItem(fPropertiesMenuItem);
+				}
+				fProjectContextMenu->Go(fProjectItemsView->ConvertToScreen(where), true, false, true);
+			}
+			break;
+		}
+		case NEWTARGET_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case RENAMETARGET_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case REMOVETARGET_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case ADDGROUP_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case RENAMEGROUP_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case REMOVEGROUP_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case NEWFILE_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case ADDFILE_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case RENAMEFILE_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case REMOVEFILE_MSG:
+		{
+			// TODO: implement
+			break;
+		}
+		case PROPERTIES_MSG:
+		{
+			// TODO: implement
 			break;
 		}
 		default:
@@ -166,7 +260,6 @@ MainWindow::_PopulateProjectTab()
 
 	BColumnListView *newoutline = new BColumnListView("project view", B_ALLOW_COLUMN_NONE);
 	BStringColumn *newcolumn = new BStringColumn("projectdata", 200, 50, 2000, B_TRUNCATE_MIDDLE);
-	//newcolumn->SetShowHeading(false);
 	newoutline->AddColumn(newcolumn, 0);
 
 	fProjectTabView->AddTab(newoutline, newtab);
@@ -178,19 +271,23 @@ MainWindow::_PopulateProjectTab()
 	vector<CompileTarget*> targettree = fProject->GetTargetTree();
 	for (uint a = 0; a < targettree.size(); a++)
 	{
-		OneStringRow* target = new OneStringRow(targettree[a]->Name.c_str());
+		OneStringRow* target = new OneStringRow(targettree[a]->Name.c_str(), "target");
 		newoutline->AddRow(target);
 		for (uint b = 0; b < targettree[a]->Groups.size(); b++)
 		{
-			OneStringRow* group = new OneStringRow(targettree[a]->Groups[b]->Name.c_str());
+			OneStringRow* group = new OneStringRow(targettree[a]->Groups[b]->Name.c_str(), "group");
 			newoutline->AddRow(group, target);
 			for (uint c = 0; c < targettree[a]->Groups[b]->Sources.size(); c++)
 			{
-				OneStringRow* file = new OneStringRow(targettree[a]->Groups[b]->Sources[c]->Path.c_str());
+				OneStringRow* file = new OneStringRow(targettree[a]->Groups[b]->Sources[c]->Path.c_str(), "source");
 				newoutline->AddRow(file, group);
 			}
+			newoutline->ExpandOrCollapse(group, targettree[a]->Groups[b]->Expanded);
 		}
+		newoutline->ExpandOrCollapse(target, true);
 	}
+	newoutline->SetSelectionMessage(new BMessage(PROJECTLISTSELECTION_MSG));
+	fProjectItemsView = newoutline;
 }
 
 void
@@ -209,5 +306,4 @@ MainWindow::_PopulateBuildProfileMenu()
 		fBuildProfileMenu->AddItem(new BMenuItem(buildproflist[a].c_str(), new BMessage(UPDATEBUILDPROFILE_MSG)));
 	}
 	fBuildProfileMenu->ItemAt(0)->SetMarked(true);
-
 }

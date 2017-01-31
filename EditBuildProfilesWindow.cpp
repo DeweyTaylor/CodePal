@@ -272,6 +272,15 @@ EditBuildProfilesWindow::MessageReceived(BMessage *msg)
 			}
 			fProfiles.erase(fProfiles.begin() + idx);
 			delete r;
+			fProfileList->DeselectAll();
+			if (idx > 0)
+			{
+				fProfileList->AddToSelection(fProfileList->RowAt(idx-1));
+			}
+			else
+			{
+				fProfileList->AddToSelection(fProfileList->RowAt(0));
+			}
 			break;
 		}
 		case ADDLIB_MSG:
@@ -440,6 +449,10 @@ EditBuildProfilesWindow::QuitRequested()
 void
 EditBuildProfilesWindow::_ProfileChanged()
 {
+	if (fProfileList->CountRows() == 0)
+	{
+		return;
+	}
 	int profidx = fProfileList->IndexOf(fProfileList->CurrentSelection());
 	BuildProfile *prof = fProfiles[profidx];
 	for (int a = 0; a < fOSMenu->CountItems(); a++)
