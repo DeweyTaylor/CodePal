@@ -67,6 +67,7 @@ MainWindow::MainWindow(void)
 
 	((BSplitView*)fProjectTabView->Parent())->SetItemCollapsed(1, true);
 	((BSplitView*)fOutputTabView->Parent())->SetItemCollapsed(1, true);
+	fSettingsMenu->SetEnabled(false);
 }
 
 
@@ -93,7 +94,7 @@ MainWindow::MessageReceived(BMessage *msg)
 				return;
 			}
 			vector<BuildProfile*> profiles = fProject->GetBuildProfiles();
-			EditBuildProfilesWindow *editwindow = new EditBuildProfilesWindow(profiles);
+			EditBuildProfilesWindow *editwindow = new EditBuildProfilesWindow(this, profiles);
 			editwindow->Show();
 			break;
 		}
@@ -112,6 +113,7 @@ MainWindow::MessageReceived(BMessage *msg)
 			fProject = new ProjectController();
 			if (fProject->Load(msg) == B_OK)
 			{
+				fSettingsMenu->SetEnabled(true);
 				_PopulateProjectTab();
 			}
 			else
@@ -121,6 +123,17 @@ MainWindow::MessageReceived(BMessage *msg)
 				fProject->Close();
 				delete fProject;
 			}
+			break;
+		}
+		case NEWPROFILEDATA_MSG:
+		{
+			/*vector<BuildProfile*> bp;
+			void* ptr;
+			msg->FindPointer("data", &ptr);
+			bp = *((vector<BuildProfile*>)ptr);
+			fProject->SetBuildProfiles(bp);*/
+			fProject->SetBuildProfiles(_fHiddenNewBuildProfiles);
+			_PopulateBuildProfileMenu();
 			break;
 		}
 		default:
@@ -135,6 +148,10 @@ MainWindow::MessageReceived(BMessage *msg)
 bool
 MainWindow::QuitRequested(void)
 {
+	if (fProject != NULL)
+	{
+		fProject->Close();
+	}
 	be_app->PostMessage(B_QUIT_REQUESTED);
 	return true;
 }
@@ -155,14 +172,8 @@ MainWindow::_PopulateProjectTab()
 	fProjectTabView->AddTab(newoutline, newtab);
 	newtab->SetLabel(fProject->ProjectName.c_str());
 
-	// populate the build project menu
-	vector<string> buildproflist = fProject->GetBuildProfileList();
-	for (uint a = 0; a < buildproflist.size(); a++)
-	{
-		fBuildProfileMenu->AddItem(new BMenuItem(buildproflist[a].c_str(), new BMessage(UPDATEBUILDPROFILE_MSG)));
-	}
-	fBuildProfileMenu->ItemAt(0)->SetMarked(true);
-
+	_PopulateBuildProfileMenu();
+	
 	// populate the project tab
 	vector<CompileTarget*> targettree = fProject->GetTargetTree();
 	for (uint a = 0; a < targettree.size(); a++)
@@ -180,4 +191,23 @@ MainWindow::_PopulateProjectTab()
 			}
 		}
 	}
+}
+
+void
+MainWindow::_PopulateBuildProfileMenu()
+{
+	// clear the old menu items
+	while (fBuildProfileMenu->CountItems() > 0)
+	{
+		BMenuItem* item = fBuildProfileMenu->RemoveItem(0);
+		delete item;
+	}
+	// populate the build project menu
+	vector<string> buildproflist = fProject->GetBuildProfileList();
+	for (uint a = 0; a < buildproflist.size(); a++)
+	{
+		fBuildProfileMenu->AddItem(new BMenuItem(buildproflist[a].c_str(), new BMessage(UPDATEBUILDPROFILE_MSG)));
+	}
+	fBuildProfileMenu->ItemAt(0)->SetMarked(true);
+
 }

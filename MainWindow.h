@@ -30,6 +30,8 @@ class MainWindow : public BWindow
 		void				MessageReceived(BMessage *msg);
 		bool				QuitRequested(void);
 
+		vector<BuildProfile*>	_fHiddenNewBuildProfiles;
+
 	private:
 		BMenuBar			*fMenuBar;
 		BMenu				*fProjectMenu;
@@ -43,12 +45,12 @@ class MainWindow : public BWindow
 		BView				*fToolBar;
 		BMenuField			*fBuildProfileSelector;
 		BPopUpMenu			*fBuildProfileMenu;
-		//BOutlineListView	*fProjectItemsView;
 		BColumnListView		*fProjectItemsView;
 
 		ProjectController	*fProject;
 
 		void				_PopulateProjectTab(void);
+		void				_PopulateBuildProfileMenu(void);
 };
 
 #endif

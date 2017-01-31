@@ -17,7 +17,7 @@ NOCOMPILE=MainWindow.h
 NOCOMPILE=ProjectController.h
 
 PROFILE=Debug
-ARCH=(Default)
+ARCH=gcc2
 OS=(Default)
 COMPILER=(Default)
 PRESCRIPT=
@@ -41,7 +41,7 @@ LIB=$(STDCPPLIBS)
 LIB=/boot/system/lib/libtracker.so
 
 PROFILE=Release
-ARCH=(Default)
+ARCH=x86_64
 OS=(Default)
 COMPILER=(Default)
 PRESCRIPT=

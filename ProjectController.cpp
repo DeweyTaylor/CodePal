@@ -355,6 +355,7 @@ ProjectController::Load(string project_path)
 	}
 	// END TEMPORARY
 	fChanged = false;
+	// update path and name
 	return B_OK;
 }
 
@@ -383,7 +384,10 @@ ProjectController::Save()
 {
 	// TODO: save
 	ofstream file;
-	file.open (ProjectDirectory + ProjectName, ios::out);
+	//cout << "path: " << fPath.Path() + fName << endl;
+	//return 0;
+	//file.open (ProjectDirectory + ProjectName);
+	file.open(fPath.Path());
 	file << "CodePal Proj v.1" << endl;
 	file << "NAME=" << ProjectName << endl;
 	file << "PDIR=" << ProjectDirectory << endl;
@@ -451,6 +455,7 @@ ProjectController::Save()
 int
 ProjectController::Close()
 {
+	cout << "changed: " << fChanged << endl;
 	if (fChanged)
 	{
 		// could ask first
@@ -511,6 +516,13 @@ vector<BuildProfile*>
 ProjectController::GetBuildProfiles()
 {
 	return fBuildProfileList;
+}
+
+void
+ProjectController::SetBuildProfiles(vector<BuildProfile*> profiles)
+{
+	fChanged = true;
+	fBuildProfileList = profiles;
 }
 
 vector<CompileTarget*>

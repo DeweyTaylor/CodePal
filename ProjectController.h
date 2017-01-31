@@ -75,6 +75,7 @@ class ProjectController
 		string					GetName() { return fName; }
 		vector<string>			GetBuildProfileList();
 		vector<BuildProfile*>	GetBuildProfiles();
+		void					SetBuildProfiles(vector<BuildProfile*>);
 		vector<CompileTarget*>	GetTargetTree();
 		string					SelectedProfile();
 		void					SetSelectedProfile(string);

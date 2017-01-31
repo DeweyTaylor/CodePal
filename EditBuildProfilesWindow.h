@@ -12,6 +12,7 @@
 
 #include "CLVHelpers.h"
 #include "ProjectController.h"
+#include "InputPanel.h"
 
 using namespace std;
 
@@ -24,25 +25,34 @@ using namespace std;
 #define NEWPROFILE_MSG		'newp'
 #define DELETEPROFILE_MSG	'delp'
 #define ADDLIB_MSG			'alib'
+#define ADDLIB2_MSG			'alb2'
 #define DELLIB_MSG			'dlib'
 #define ADDLOC_MSG			'aloc'
+#define ADDLOC2_MSG			'alc2'
 #define DELLOC_MSG			'dloc'
 #define ADDSYS_MSG			'asys'
+#define ADDSYS2_MSG			'ass2'
 #define DELSYS_MSG			'dsys'
 #define OSCHANGED_MSG		'osch'
 #define COMPILERCHANGED_MSG	'cmch'
 #define ARCHCHANGED_MSG		'arch'
 #define PROFILECHANGED_MSG	'prch'
+#define NEWPROFILE2_MSG		'nwp2'
+#define NEWPROFILEDATA_MSG	'npdm'
 
-#define AVAILABLECOMPILERCOUNT	1
-#define AVAILABLEOSCOUNT		1
-#define AVAILABLEARCHCOUNT		3
+#define AVAILABLECOMPILERCOUNT	2
+#define AVAILABLEOSCOUNT		2
+#define AVAILABLEARCHCOUNT		4
+
+class MainWindow;
 
 class EditBuildProfilesWindow : public BWindow
 {
 	public:
-				EditBuildProfilesWindow(vector<BuildProfile*>);
+				EditBuildProfilesWindow(MainWindow*, vector<BuildProfile*>);
+				~EditBuildProfilesWindow();
 		void	MessageReceived(BMessage*);
+		bool	QuitRequested();
 	private:
 		BColumnListView	*fProfileList;
 		BMenuField		*fOSSelector;
@@ -73,11 +83,14 @@ class EditBuildProfilesWindow : public BWindow
 		BButton			*fAddSysBtn;
 		BButton			*fDeleteSysBtn;
 
-		string	fAvailableCompilers[AVAILABLECOMPILERCOUNT] = {"gcc"};
-		string	fAvailableArchitectures[AVAILABLEARCHCOUNT] = {"gcc2", "gcc5", "x86_64"};
-		string	fAvailableOSes[AVAILABLEOSCOUNT] = {"Haiku"};
+		string	fAvailableCompilers[AVAILABLECOMPILERCOUNT] = {"(Default)", "gcc"};
+		string	fAvailableArchitectures[AVAILABLEARCHCOUNT] = {"(Default)", "gcc2", "gcc5", "x86_64"};
+		string	fAvailableOSes[AVAILABLEOSCOUNT] = {"(Default)", "Haiku"};
 
 		vector<BuildProfile*>	fProfiles;
+
+		BFilePanel*		fOpenFilePanel;
+		MainWindow*		fParent;
 
 		void			_ProfileChanged();
 };
