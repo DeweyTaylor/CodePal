@@ -186,7 +186,11 @@ void
 EditBuildProfilesWindow::MessageReceived(BMessage *msg)
 {
 	int profidx = fProfileList->IndexOf(fProfileList->CurrentSelection());
-	BuildProfile *prof = fProfiles[profidx];
+	BuildProfile *prof = NULL;
+	if (profidx >= 0)
+	{
+		BuildProfile *prof = fProfiles[profidx];
+	}
 
 	switch(msg->what)
 	{

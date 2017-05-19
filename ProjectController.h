@@ -11,6 +11,8 @@
 #include <String.h>
 #include <InterfaceKit.h>
 
+#define PROJ_SIG	"text/x-vnd.jdt-codepal.project"
+
 using namespace std;
 
 struct SourceFile
@@ -67,6 +69,7 @@ class ProjectController
 		int						Save();
 		int						Close();
 		int						SaveAs(string);
+		int						SaveAs(BMessage*);
 		int 					Build();
 		int 					AddFile(string);
 		int 					RemoveFile(string);
@@ -76,9 +79,12 @@ class ProjectController
 		vector<string>			GetBuildProfileList();
 		vector<BuildProfile*>	GetBuildProfiles();
 		void					SetBuildProfiles(vector<BuildProfile*>);
-		vector<CompileTarget*>	GetTargetTree();
+		vector<CompileTarget*>	GetTargetTree() { return fTargetList; }
+		void					SetTargetTree(vector<CompileTarget*> newlist) { fTargetList = newlist; }
 		string					SelectedProfile();
 		void					SetSelectedProfile(string);
+		BPath					GetPath() { return fPath; }
+		void					SetChanged(bool changed) { fChanged = changed; }
 
 		string					ProjectName = "";
 		string					ProjectDirectory;
@@ -90,6 +96,8 @@ class ProjectController
 		string					fName = "";
 		bool					fChanged; // projects needs saving
 		string					fSelectedProfile;
+
+		string					_GetRefFromMsg(BMessage*);
 };
 
 #endif

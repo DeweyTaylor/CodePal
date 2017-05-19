@@ -55,11 +55,13 @@ ProjectController::Load(string project_path)
 	BEntry entry(project_path.c_str(), true);
 	if (entry.InitCheck() != B_OK)
 	{
+		cout<<"no init"<<endl;
 		return B_NO_INIT;
 	}
 
 	if (entry.Exists() != true)
 	{
+		cout<<"not found"<<endl;
 		return B_ENTRY_NOT_FOUND;
 	}
 
@@ -74,6 +76,7 @@ ProjectController::Load(string project_path)
 	ifstream file(fPath.Path());
 	if (!file.is_open())
 	{
+		cout<<"error opening"<<endl;
 		// error opening file
 		return B_ERROR;
 	}
@@ -81,12 +84,14 @@ ProjectController::Load(string project_path)
 	// load project
 	if (!getline(file, line))
 	{
+		cout<<"error reading line"<<endl;
 		file.close();
 		return B_ERROR;
 	}
 	// first line is version number
 	if (line != "CodePal Proj v.1")
 	{
+		cout<<"bad id line"<<endl;
 		// invalid file type or file version number
 		file.close();
 		return B_ERROR;
@@ -337,7 +342,7 @@ ProjectController::Load(string project_path)
 
 	if (CurrentTarget == NULL)
 	{
-		return B_ERROR;
+		//return B_ERROR;
 	}
 	file.close();
 	// TEMPORARY FOR DEBUGGING
@@ -359,24 +364,61 @@ ProjectController::Load(string project_path)
 	return B_OK;
 }
 
-int ProjectController::Load(BMessage *msg)
+int
+ProjectController::Load(BMessage *msg)
 {
-	if (!msg)
+	string file = _GetRefFromMsg(msg);
+	if (file == "")
 	{
 		return B_ERROR;
 	}
+	return Load(file);
+}
+
+string
+ProjectController::_GetRefFromMsg(BMessage* msg)
+{
+	msg->PrintToStream();
+	if (!msg)
+	{
+		//return B_ERROR;
+		cout<<"in get: no message"<<endl;
+		return "";
+	}
 
 	entry_ref dirRef;
+	BString name = "";
 	if(msg->FindRef("refs", &dirRef) != B_OK)
 	{
-		return B_BAD_VALUE;
+		//return B_BAD_VALUE;
+		//cout << "in get: bad ref"<<endl;
+		//return "";
+		if (msg->FindRef("directory", &dirRef) != B_OK)
+		{
+			// error
+			return "";
+		}
+		//BString name;
+		if (msg->FindString("name", &name) != B_OK)
+		{
+			// error
+			return "";
+		}
+
 	}
 
 	BEntry entry(&dirRef, true);
 
 	BPath path;
+	BString fullpath;
 	entry.GetPath(&path);
-	return Load(path.Path());
+	fullpath << path.Path();
+	if (name != "")
+	{
+		fullpath << "/" << name;
+	}
+	cout <<"full path: '" << fullpath << "'" << endl;
+	return fullpath.String();
 }
 
 int
@@ -444,8 +486,25 @@ ProjectController::Save()
 		}
 	}
 	file.close();
+	BNode node(fPath.Path());
+	BNodeInfo info(&node);
+	info.SetType(PROJ_SIG);
 	fChanged = false;
 	return B_OK;
+}
+
+int
+ProjectController::SaveAs(BMessage* msg)
+{
+	cout<<"in save..."<<endl;
+	string file = _GetRefFromMsg(msg);
+	if (file == "")
+	{
+		cout<<"B_ERROR"<<endl;
+		return B_ERROR;
+	}
+	cout<<"got ref from msg ok"<<endl;
+	return SaveAs(file);
 }
 
 int
@@ -464,7 +523,9 @@ ProjectController::Close()
 int
 ProjectController::SaveAs(string new_project_path)
 {
-	// TODO: implement
+	// TODO: add the option to copy the files as well
+	fPath = BPath(new_project_path.c_str());
+	Save();
 	return B_OK;
 }
 
@@ -525,12 +586,6 @@ ProjectController::SetBuildProfiles(vector<BuildProfile*> profiles)
 {
 	fChanged = true;
 	fBuildProfileList = profiles;
-}
-
-vector<CompileTarget*>
-ProjectController::GetTargetTree()
-{
-	return fTargetList;
 }
 
 string

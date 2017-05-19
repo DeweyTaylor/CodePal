@@ -12,6 +12,7 @@ class OneStringRow : public BRow
 					OneStringRow(const char*, const char* = 0);
 					~OneStringRow();
 		const char*	GetTypeID() { return fTypeID; }
+		const char*	GetValue() { return val; }
 	private:
 		const char*	val;
 		const char* fTypeID;

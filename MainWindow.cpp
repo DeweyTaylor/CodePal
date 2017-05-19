@@ -9,12 +9,12 @@
 #include <GroupLayoutBuilder.h>
 
 MainWindow::MainWindow(void)
-	:	BWindow(BRect(100,100,500,400),"CodePal",B_TITLED_WINDOW, B_ASYNCHRONOUS_CONTROLS)
+	:	BWindow(BRect(100,100,400,700),"CodePal",B_TITLED_WINDOW, B_ASYNCHRONOUS_CONTROLS)
 {
 	fProject = NULL;
 	fBuildProfileMenu = new BPopUpMenu("build profile menu");
 	fBuildProfileSelector = new BMenuField("build profile selector", "Build Profile:", fBuildProfileMenu);
-	fProjectContextMenu = new BPopUpMenu("project context menu");
+	fProjectContextMenu = new BPopUpMenu("project context menu", false, false);
 
 	fMenuBar = new BMenuBar("menubar");
 
@@ -37,11 +37,13 @@ MainWindow::MainWindow(void)
 	fLeftTabView = new BTabView("left view");
 	fRightTabView = new BTabView("right view");
 	fOutputTabView = new BTabView("output view");
+	fPropertiesTabView = new BTabView("properties view");
 	fProjectTabView->SetExplicitMinSize(BSize(1.0, 1.0));
 	fDebugTabView->SetExplicitMinSize(BSize(1.0, 1.0));
 	fLeftTabView->SetExplicitMinSize(BSize(1.0, 1.0));
 	fRightTabView->SetExplicitMinSize(BSize(1.0, 1.0));
 	fOutputTabView->SetExplicitMinSize(BSize(1.0, 1.0));
+	fPropertiesTabView->SetExplicitMinSize(BSize(1.0, 1.0));
 
 	SetLayout(new BGroupLayout(B_HORIZONTAL));
 	AddChild(BGroupLayoutBuilder(B_VERTICAL, 0.0)
@@ -53,7 +55,10 @@ MainWindow::MainWindow(void)
 		)
 		.Add(BSplitLayoutBuilder(B_VERTICAL, 0.0)
 			.Add(BSplitLayoutBuilder(B_HORIZONTAL, 0.0)
-				.Add(fProjectTabView, 1.0)
+				.Add(BSplitLayoutBuilder(B_VERTICAL, 0.0)
+					.Add(fProjectTabView, 1.0)
+					.Add(fPropertiesTabView, 1.0)
+				)
 				.Add(BSplitLayoutBuilder(B_VERTICAL, 0.0)
 					.Add(fDebugTabView, 1.0)
 					.Add(BSplitLayoutBuilder(B_HORIZONTAL, 0.0)
@@ -66,7 +71,7 @@ MainWindow::MainWindow(void)
 		)
 	);
 
-	((BSplitView*)fProjectTabView->Parent())->SetItemCollapsed(1, true);
+	((BSplitView*)fProjectTabView->Parent()->Parent())->SetItemCollapsed(1, true);
 	((BSplitView*)fOutputTabView->Parent())->SetItemCollapsed(1, true);
 	fSettingsMenu->SetEnabled(false);
 }
@@ -79,6 +84,92 @@ MainWindow::MessageReceived(BMessage *msg)
 	{
 		case NEWPROJECT_MSG:
 		{
+			BMessenger target(this);
+			BFilePanel *newpanel = new BFilePanel(B_SAVE_PANEL, &target, NULL, B_FILE_NODE, false, new BMessage(NEWPROJECT2_MSG), NULL, true, true);
+			newpanel->Show();
+			break;
+		}
+		case NEWPROJECT2_MSG:
+		{
+			BMessage* msg2 = new BMessage(*msg);
+			msg2->what = NEWPROJECT3_MSG;
+			InputPanel* panel = new InputPanel(this, "Project Name", "Enter the name of the new project here:", "Okay", "Cancel", msg2);
+			panel->Show();
+			break;
+		}
+		case NEWPROJECT3_MSG:
+		{
+			// make sure "okay" was pressed
+			BString btn;
+			msg->FindString("button", &btn);
+			if (btn != "Okay")
+			{
+				break;
+			}
+
+			if (fProject != NULL)
+			{
+				fProject->Close();
+				delete fProject;
+			}
+
+			fProject = new ProjectController();
+
+			// set name
+			BString name;
+			msg->FindString("value", &name);
+			fProject->ProjectName = name;
+			// set directory
+			entry_ref dir;
+			if (msg->FindRef("directory", &dir) != B_OK)
+			{
+				// TODO: show error
+				cout <<"no directory found"<<endl;
+				break;
+			}
+			BEntry e(&dir, true);
+			BPath p;
+			e.GetPath(&p);
+			fProject->ProjectDirectory = p.Path();
+
+			// TODO: check extension
+			BString fname;
+			if (msg->FindString("name", &fname) != B_OK)
+			{
+				// TODO: show error
+				cout <<"no name found" << endl;
+				break;
+			}
+			if (fname.FindLast(".proj") != fname.Length() - 5)
+			{
+				fname << ".proj";
+			}
+
+			BString fullpath;
+			fullpath << p.Path() << "/" << fname;
+
+			// save and open the project
+			if (fProject->SaveAs(fullpath.String()) == B_OK)
+			{
+				if (fProject->Load(fullpath.String()) == B_OK)
+				{
+					fSettingsMenu->SetEnabled(true);
+					_PopulateProjectTab();
+					_PopulateBuildProfileMenu();
+				}
+				else
+				{
+					cout<<"error loading :("<<endl;
+					BAlert *alert = new BAlert("Error", "Error loading project file.", "Okay", NULL, NULL, B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_STOP_ALERT);
+					alert->Go();
+					fProject->Close();
+					delete fProject;
+				}
+			}
+			else
+			{
+				cout <<"error saving :("<<endl;
+			}
 			break;
 		}
 		case OPENPROJECT_MSG:
@@ -116,6 +207,7 @@ MainWindow::MessageReceived(BMessage *msg)
 			{
 				fSettingsMenu->SetEnabled(true);
 				_PopulateProjectTab();
+				_PopulateBuildProfileMenu();
 			}
 			else
 			{
@@ -140,10 +232,7 @@ MainWindow::MessageReceived(BMessage *msg)
 			//where.x += 2; // to prevent occasional select
 			if (buttons & B_SECONDARY_MOUSE_BUTTON)
 			{
-				//		true, false, true);
-				// TODO: set up the menu here
 				OneStringRow* r = (OneStringRow*)fProjectItemsView->CurrentSelection();
-				// "target" "group" "source"
 				while (fProjectContextMenu->CountItems() > 0)
 				{
 					fProjectContextMenu->RemoveItem(0);
@@ -152,39 +241,91 @@ MainWindow::MessageReceived(BMessage *msg)
 				if (type == "target")
 				{
 					fProjectContextMenu->AddItem(fNewTargetMenuItem);
-					fProjectContextMenu->AddItem(fRenameTargetMenuItem);
+					//fProjectContextMenu->AddItem(fRenameTargetMenuItem);
 					fProjectContextMenu->AddItem(fRemoveTargetMenuItem);
 					fProjectContextMenu->AddItem(fAddGroupMenuItem);
-					fProjectContextMenu->AddItem(fPropertiesMenuItem);
 				}
 				else if (type == "group")
 				{
-					fProjectContextMenu->AddItem(fRenameGroupMenuItem);
+					//fProjectContextMenu->AddItem(fRenameGroupMenuItem);
 					fProjectContextMenu->AddItem(fRemoveGroupMenuItem);
 					fProjectContextMenu->AddItem(fNewFileMenuItem);
 					fProjectContextMenu->AddItem(fAddFileMenuItem);
-					fProjectContextMenu->AddItem(fPropertiesMenuItem);
 				}
 				else if (type == "source")
 				{
-					fProjectContextMenu->AddItem(fRenameFileMenuItem);
+					//fProjectContextMenu->AddItem(fRenameFileMenuItem);
 					fProjectContextMenu->AddItem(fRemoveFileMenuItem);
-					fProjectContextMenu->AddItem(fPropertiesMenuItem);
 				}
+				fProjectContextMenu->SetTargetForItems(this);
 				fProjectContextMenu->Go(fProjectItemsView->ConvertToScreen(where), true, false, true);
 			}
 			break;
 		}
 		case NEWTARGET_MSG:
 		{
-			// TODO: implement
+			InputPanel* ip = new InputPanel(this, "New Target", "Name: ", "Cancel", "Okay", new BMessage(NEWTARGET2_MSG));
+			ip->Show();
+			// use InputPanel
 			break;
 		}
-		case RENAMETARGET_MSG:
+		case NEWTARGET2_MSG:
 		{
-			// TODO: implement
+			BString str;
+			msg->FindString("button", &str);
+			string s1 = str.String();
+			if (s1 != "Okay")
+			{
+				return;
+			}
+			msg->FindString("value", &str);
+			s1 = str.String();
+			if (s1 == "")
+			{
+				// TODO: show error
+				return;
+			}
+			// find the target that was selected
+			OneStringRow* r = (OneStringRow*)fProjectItemsView->CurrentSelection();
+			string value = r->GetValue();
+			vector<CompileTarget*> targets = fProject->GetTargetTree();
+			uint idx = -1;
+			string targdir;
+			string exec;
+			for (uint a = 0; a < targets.size(); a++)
+			{
+				if (targets[a]->Name == value)
+				{
+					idx = a;
+					targdir = targets[a]->TargetDir;
+					exec = targets[a]->Executable;
+					break;
+				}
+			}
+			if (idx < 0)
+			{
+				// TODO: show error
+				return;
+			}
+			vector<CompileTarget*>::iterator it = targets.begin() + idx + 1;
+			CompileTarget* t = new CompileTarget();
+			t->TargetDir = targdir;
+			t->Executable = exec;
+			t->Name = s1;
+			targets.insert(it, 1, t);
+			fProject->SetTargetTree(targets);
+			fProject->SetChanged(true);
+			_PopulateProjectTab();
+			// TODO: select the new target
+			cout<<"tab count (in newtarget): " << fProjectTabView->CountTabs() << endl;
 			break;
 		}
+		//case RENAMETARGET_MSG: // unneeded (properties)
+		//{
+			// TODO: implement
+			// use InputPanel
+		//	break;
+		//}
 		case REMOVETARGET_MSG:
 		{
 			// TODO: implement
@@ -193,13 +334,15 @@ MainWindow::MessageReceived(BMessage *msg)
 		case ADDGROUP_MSG:
 		{
 			// TODO: implement
+			// use InputPanel
 			break;
 		}
-		case RENAMEGROUP_MSG:
-		{
+		//case RENAMEGROUP_MSG: // unneeded (properties)
+		//{
 			// TODO: implement
-			break;
-		}
+			// use InputPanel
+		//	break;
+		//}
 		case REMOVEGROUP_MSG:
 		{
 			// TODO: implement
@@ -208,24 +351,22 @@ MainWindow::MessageReceived(BMessage *msg)
 		case NEWFILE_MSG:
 		{
 			// TODO: implement
+			// use FilePanel
 			break;
 		}
 		case ADDFILE_MSG:
 		{
 			// TODO: implement
+			// use FilePanel
 			break;
 		}
-		case RENAMEFILE_MSG:
-		{
+		//case RENAMEFILE_MSG: // unneeded (properties)
+		//{
 			// TODO: implement
-			break;
-		}
+			// use InputPanel
+		//	break;
+		//}
 		case REMOVEFILE_MSG:
-		{
-			// TODO: implement
-			break;
-		}
-		case PROPERTIES_MSG:
 		{
 			// TODO: implement
 			break;
@@ -250,23 +391,39 @@ MainWindow::QuitRequested(void)
 	return true;
 }
 
+BPath
+MainWindow::GetProjectPath()
+{
+	if (fProject)
+	{
+		return fProject->GetPath();
+	}
+	return BPath();
+}
+
 void
 MainWindow::_PopulateProjectTab()
 {
 	string wintitle = "CodePal (" + fProject->GetName() + ")";
 	SetTitle(wintitle.c_str());
+	bool addtab = false;
 
-	BTab *newtab = new BTab();
+	// due to bugs in BTabView, we need to delete the whole tab view and recreate it
+	// (working with *just* the tab or the view in it results in the new view not displaying)
+	BSplitView* parent = (BSplitView*)fProjectTabView->Parent();
+	fProjectTabView->RemoveSelf();
+	delete fProjectTabView;
+	fProjectTabView = new BTabView("project view");
+	parent->AddChild(0, fProjectTabView, 1.0);
+	BTab* newtab = new BTab();
 
 	BColumnListView *newoutline = new BColumnListView("project view", B_ALLOW_COLUMN_NONE);
 	BStringColumn *newcolumn = new BStringColumn("projectdata", 200, 50, 2000, B_TRUNCATE_MIDDLE);
 	newoutline->AddColumn(newcolumn, 0);
 
-	fProjectTabView->AddTab(newoutline, newtab);
 	newtab->SetLabel(fProject->ProjectName.c_str());
+	fProjectTabView->AddTab(newoutline, newtab);
 
-	_PopulateBuildProfileMenu();
-	
 	// populate the project tab
 	vector<CompileTarget*> targettree = fProject->GetTargetTree();
 	for (uint a = 0; a < targettree.size(); a++)
@@ -305,5 +462,8 @@ MainWindow::_PopulateBuildProfileMenu()
 	{
 		fBuildProfileMenu->AddItem(new BMenuItem(buildproflist[a].c_str(), new BMessage(UPDATEBUILDPROFILE_MSG)));
 	}
-	fBuildProfileMenu->ItemAt(0)->SetMarked(true);
+	if (fBuildProfileMenu->CountItems() > 0)
+	{
+		fBuildProfileMenu->ItemAt(0)->SetMarked(true);
+	}
 }

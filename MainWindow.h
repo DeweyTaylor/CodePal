@@ -18,6 +18,8 @@
 #include "InputPanel.h"
 
 #define NEWPROJECT_MSG				'nprj'
+#define NEWPROJECT2_MSG				'npr2'
+#define NEWPROJECT3_MSG				'npr3'
 #define OPENPROJECT_MSG				'oprj'
 #define EXIT_MSG					'exit'
 #define UPDATEBUILDPROFILE_MSG		'ubpr'
@@ -35,6 +37,13 @@
 #define RENAMEFILE_MSG				'rnfl'
 #define REMOVEFILE_MSG				'rmfl'
 #define PROPERTIES_MSG				'prop'
+#define NEWTARGET2_MSG				'ntg2'
+
+struct WindowRef
+{
+	MainWindow* Window;
+	WindowRef*	Next;
+};
 
 class MainWindow : public BWindow
 {
@@ -42,6 +51,7 @@ class MainWindow : public BWindow
 							MainWindow(void);
 		void				MessageReceived(BMessage *msg);
 		bool				QuitRequested(void);
+		BPath				GetProjectPath();
 
 		vector<BuildProfile*>	_fHiddenNewBuildProfiles;
 
@@ -55,6 +65,7 @@ class MainWindow : public BWindow
 		BTabView*			fOutputTabView;
 		BTabView*			fLeftTabView;
 		BTabView*			fRightTabView;
+		BTabView*			fPropertiesTabView;
 		BView*				fToolBar;
 		BMenuField*			fBuildProfileSelector;
 		BPopUpMenu*			fBuildProfileMenu;
@@ -67,16 +78,16 @@ class MainWindow : public BWindow
 		void				_PopulateBuildProfileMenu(void);
 
 		BMenuItem*			fNewTargetMenuItem = new BMenuItem("New Target...", new BMessage(NEWTARGET_MSG));
-		BMenuItem*			fRenameTargetMenuItem = new BMenuItem("Rename Target...", new BMessage(RENAMETARGET_MSG));
+		//BMenuItem*			fRenameTargetMenuItem = new BMenuItem("Rename Target...", new BMessage(RENAMETARGET_MSG));
 		BMenuItem*			fRemoveTargetMenuItem = new BMenuItem("Remove Target", new BMessage(REMOVETARGET_MSG));
 		BMenuItem*			fAddGroupMenuItem = new BMenuItem("Add Group...", new BMessage(ADDGROUP_MSG));
-		BMenuItem*			fRenameGroupMenuItem = new BMenuItem("Rename Group...", new BMessage(RENAMEGROUP_MSG));
+		//BMenuItem*			fRenameGroupMenuItem = new BMenuItem("Rename Group...", new BMessage(RENAMEGROUP_MSG));
 		BMenuItem*			fRemoveGroupMenuItem = new BMenuItem("Remove Group", new BMessage(REMOVEGROUP_MSG));
 		BMenuItem*			fNewFileMenuItem = new BMenuItem("New File...", new BMessage(NEWFILE_MSG));
 		BMenuItem*			fAddFileMenuItem = new BMenuItem("Add File...", new BMessage(ADDFILE_MSG));
-		BMenuItem*			fRenameFileMenuItem = new BMenuItem("Rename File...", new BMessage(RENAMEFILE_MSG));
+		//BMenuItem*			fRenameFileMenuItem = new BMenuItem("Rename File...", new BMessage(RENAMEFILE_MSG));
 		BMenuItem*			fRemoveFileMenuItem = new BMenuItem("Remove File", new BMessage(REMOVEFILE_MSG));
-		BMenuItem*			fPropertiesMenuItem = new BMenuItem("Properties...", new BMessage(PROPERTIES_MSG));
+		//BMenuItem*			fPropertiesMenuItem = new BMenuItem("Properties...", new BMessage(PROPERTIES_MSG));
 };
 
 #endif
